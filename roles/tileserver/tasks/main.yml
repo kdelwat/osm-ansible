@@ -1,0 +1,131 @@
+---
+- name: Install dependencies
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - bzip2
+      - clang
+      - curl
+      - gdal-bin
+      - tar
+      - unzip
+      - wget
+      - libboost-all-dev
+      - libbz2-dev
+      - libcairo2
+      - libcairo2-dev
+      - libfreetype6-dev
+      - libgdal-dev
+      - libharfbuzz-dev
+      - libicu-dev
+      - libjpeg-dev
+      - libpng-dev
+      - libproj-dev
+      - libtiff-dev
+      - mapnik-utils
+      - python-cairo
+      - python-cairo-dev
+      - python-dev
+      - libboost-python-dev
+      - python-setuptools
+      - python3-setuptools
+      - postgis
+      - postgresql-10-postgis-2.4
+      - osm2pgsql
+      - postgresql-server-dev-10
+      - postgresql-10
+      - postgresql-contrib
+      - postgresql-10-postgis-scripts
+      - libmapnik-dev
+      - mapnik-utils
+      - python-mapnik
+
+# - name: Clone Mapnik
+#   shell: git clone --recursive --depth=1 https://github.com/mapnik/mapnik.git /mapserver/sources/Mapnik
+#   args:
+#     creates: /mapserver/sources/Mapnik
+
+# - name: Configure Mapnik install
+#   shell: ./configure
+#   args:
+#     chdir: /mapserver/sources/Mapnik
+#     creates: /mapserver/sources/Mapnik/src/libmapnik.so
+
+# - name: Make Mapnik
+#   shell: make
+#   args:
+#     chdir: /mapserver/sources/Mapnik
+#     creates: /mapserver/sources/Mapnik/src/libmapnik.so
+
+# - name: Install Mapnik
+#   shell: make install
+#   args:
+#     chdir: /mapserver/sources/Mapnik
+#     creates: /usr/local/lib/mapnik
+
+# - name: Clone Mapnik Python bindings
+#   shell: git clone --recursive --depth=1 https://github.com/mapnik/python-mapnik.git /mapserver/sources/Mapnik-Python
+#   args:
+#     creates: /mapserver/sources/Mapnik-Python
+
+# - name: Build Mapnik Python bindings
+#   shell: python setup.py develop
+#   args:
+#     chdir: /mapserver/sources/Mapnik-Python
+
+# - name: Install Mapnik Python bindings
+#   shell: python setup.py install
+#   args:
+#     chdir: /mapserver/sources/Mapnik-Python
+
+- name: Clone Mod_Tile
+  shell: git clone --recursive --depth=1 https://github.com/openstreetmap/mod_tile.git /mapserver/sources/Mod-Tile
+  args:
+    creates: /mapserver/sources/Mod-Tile
+
+- name: Run autogen for Mod_Tile
+  shell: ./autogen.sh
+  args:
+    chdir: /mapserver/sources/Mod-Tile
+
+- name: Run configure for Mod_Tile
+  shell: ./configure
+  args:
+    chdir: /mapserver/sources/Mod-Tile
+
+- name: Make Mod_Tile
+  make:
+    chdir: /mapserver/sources/Mod-Tile
+
+- name: Install Mod_Tile
+  make:
+    target: install
+    chdir: /mapserver/sources/Mod-Tile
+
+- name: Install Mod_Tile part 2
+  make:
+    target: install-mod_tile
+    chdir: /mapserver/sources/Mod-Tile
+
+- name: Run ldconfig
+  shell: ldconfig
+
+- name: Create Postgres database
+  shell: "createdb -E UTF8 gis -O {{ postgres_user }}"
+  become: yes
+  become_user: postgres
+
+- name: Add postgis extension to Postgres
+  postgresql_query:
+    db: gis
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE EXTENSION postgis;
+
+- name: Add hstore extension to Postgres
+  postgresql_query:
+    db: gis
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE EXTENSION hstore;

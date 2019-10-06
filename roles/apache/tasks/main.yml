@@ -1,0 +1,94 @@
+---
+- name: Back up Renderd configuration
+  copy:
+    remote_src: true
+    src: /usr/local/etc/renderd.conf
+    dest: /usr/local/etc/renderd.conf.backup
+
+- name: Configure Renderd
+  template:
+    src: ../templates/renderd.conf.j2
+    dest: /usr/local/etc/renderd.conf
+
+- name: Configure Renderd init script
+  template:
+    src: ../templates/renderd.init.j2
+    dest: /etc/init.d/renderd
+
+- name: Make Renderd init executable
+  shell: chmod a+x /etc/init.d/renderd
+
+- name: Start Renderd
+  systemd:
+    name: renderd
+    state: started
+    daemon_reload: yes
+    enabled: yes
+
+- name: Edit layers
+  template:
+    src: ../templates/leaflet.osm.js.j2
+    dest: /mapserver/website/www/vendor/assets/leaflet/leaflet.osm.js
+
+- name: Edit OSM interface to point to local Mapnik
+  template:
+    src: ../templates/OpenStreetMap.js.j2
+    dest: /mapserver/website/www/vendor/assets/openlayers/OpenStreetMap.js
+
+- name: Generate i18n files
+  shell: bundle exec rake i18n:js:export
+  args:
+    chdir: /mapserver/website/www
+    creates: /mapserver/website/www/app/assets/javascripts/i18n/embed.js
+
+- name: Compile assets
+  shell: bundle exec rake assets:precompile
+  args:
+    chdir: /mapserver/website/www
+
+- name: Create directory for mod_tile
+  file:
+    path: /var/lib/mod_tile
+    state: directory
+
+- name: Create directory for renderd
+  file:
+    path: /var/lib/renderd
+    state: directory
+
+- name: Load mod_tile in Apache
+  template:
+    src: ../templates/mod_tile.load.j2
+    dest: /etc/apache2/mods-available/mod_tile.load
+
+- name: Configure Apache
+  template:
+    src: ../templates/mapserver.conf.j2
+    dest: /etc/apache2/sites-available/mapserver.conf
+
+- name: Symlink mods
+  file:
+    src: /etc/apache2/mods-available/mod_tile.load
+    dest: /etc/apache2/mods-enabled/mod_tile.load
+    state: link
+
+- name: Symlink sites
+  file:
+    src: /etc/apache2/sites-available/mapserver.conf
+    dest: /etc/apache2/sites-enabled/mapserver.conf
+    state: link
+
+- name: Remove default site
+  file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+
+- name: Allow ports in firewall
+  ufw:
+    rule: allow
+    port: 80
+
+- name: Restart Apache
+  service:
+    name: apache2
+    state: restarted

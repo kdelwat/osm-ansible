@@ -1,0 +1,5 @@
+---
+server_url: argentiere.cadel.me
+postgres_user: root
+postgres_password: osm12345
+rails_port_secret: uliF7IG3RFW3NUSDGFLSYASDFJK

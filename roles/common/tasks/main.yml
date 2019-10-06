@@ -1,0 +1,106 @@
+---
+- name: Allow SSH in UFW
+  ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+
+# Initial setup
+- name: Create planet directory
+  file:
+    path: /mapserver/planet
+    state: directory
+
+- name: Create sources directory
+  file:
+    path: /mapserver/sources
+    state: directory
+
+- name: Create styles directory
+  file:
+    path: /mapserver/sources
+    state: directory
+
+- name: Create API directory
+  file:
+    path: /mapserver/website/api
+    state: directory
+
+- name: Create tiles directory
+  file:
+    path: /mapserver/website/tiles
+    state: directory
+
+- name: Create website directory
+  file:
+    path: /mapserver/website/www
+    state: directory
+
+- name: Install dependencies
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - apache2
+      - apache2-dev
+      - build-essential
+      - git-core
+      - imagemagick
+      - libffi-dev
+      - libmagickwand-dev
+      - libpq-dev
+      - libsasl2-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - nodejs
+      - postgresql
+      - postgresql-contrib
+      - postgresql-server-dev-all
+      - ruby-full
+      - apt-transport-https
+      - ca-certificates
+      - dirmngr
+      - gnupg
+      - libboost-date-time-dev
+      - libboost-dev
+      - libboost-filesystem-dev
+      - libboost-locale-dev
+      - libboost-program-options-dev
+      - libboost-regex-dev
+      - libboost-system-dev
+      - libcrypto++-dev
+      - libfcgi-dev
+      - libmemcached-dev
+      - libpqxx-dev
+      - osmosis
+      - libarchive13
+      - libarchive-dev
+      - python-psycopg2
+
+# From https://stackoverflow.com/a/22121802
+- name: Install bundler
+  command: bash -lc "gem install bundler"
+  args:
+    creates: /usr/local/bin/bundler
+
+# See issue https://github.com/rbenv/rbenv/issues/1138
+- name: Update RubyGems to avoid bundler issue
+  shell: gem update --system
+
+- name: Add key for Phusion repository
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 561F9B9CAC40B2F7
+
+- name: Add Phusion repository
+  apt_repository:
+    repo: deb https://oss-binaries.phusionpassenger.com/apt/passenger bionic main
+    state: present
+
+- name: Install Phusion
+  apt:
+    name: libapache2-mod-passenger
+    update_cache: yes

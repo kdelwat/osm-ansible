@@ -1,0 +1,24 @@
+L.OSM = {};
+
+L.OSM.TileLayer = L.TileLayer.extend({
+  options: {
+    url: document.location.protocol === 'http:' ?
+      'http://{{ server_url }}/standard/{z}/{x}/{y}.png' :
+      'http://{{ server_url }}/standard/{z}/{x}/{y}.png',
+    attribution: '© {{ attribution }}'
+  },
+
+  initialize: function (options) {
+    options = L.Util.setOptions(this, options);
+    L.TileLayer.prototype.initialize.call(this, options.url);
+  }
+});
+
+L.OSM.Mapnik = L.OSM.TileLayer.extend({
+  options: {
+    url: document.location.protocol === 'http:' ?
+      'http://{{ server_url }}/standard/{z}/{x}/{y}.png' :
+      'http://{{ server_url }}/standard/{z}/{x}/{y}.png',
+    maxZoom: 20
+  }
+});

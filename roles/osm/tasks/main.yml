@@ -1,0 +1,106 @@
+---
+# Install OSM website
+- name: Clone OSM website
+  git:
+    repo: "https://github.com/openstreetmap/openstreetmap-website.git"
+    dest: /mapserver/website/www
+    depth: 1
+    force: yes
+
+- name: Delete banners
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_fileglob:
+    - "/mapserver/website/www/app/assets/images/banners/*.png"
+
+- name: Create blank banner
+  shell: "echo -e 'blank:\n  id: blank' > /mapserver/website/www/config/banners.yml"
+
+- name: Run Bundler for Ruby files
+  bundler:
+    state: present
+    chdir: /mapserver/website/www
+  environment:
+    RAILS_ENV: production
+
+- name: Install Nodejs dependencies
+  shell: bundle exec rake yarn:install
+  args:
+    chdir: /mapserver/website/www
+    creates: /mapserver/website/www/node_modules
+
+- name: Copy database configuration file
+  template:
+    src: ../templates/database.yml.j2
+    dest: /mapserver/website/www/config/database.yml
+
+- name: Copy storage configuration file
+  copy:
+    src: /mapserver/website/www/config/example.storage.yml
+    dest: /mapserver/website/www/config/storage.yml
+    remote_src: yes
+
+- name: Copy application configuration file
+  copy:
+    src: /mapserver/website/www/config/settings.yml
+    dest: /mapserver/website/www/config/settings.local.yml
+    remote_src: yes
+
+- name: Change server URL for OSM website
+  shell: "sed -i /mapserver/website/www/config/settings.local.yml -e 's/openstreetmap.example.com/{{ server_url }}/'"
+
+- name: Create PostgreSQL user
+  postgresql_user:
+    name: "{{ postgres_user }}"
+    password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+
+- name: Give user create permissions
+  postgresql_query:
+    query: ALTER USER root WITH superuser
+  become: true
+  become_user: postgres
+
+- name: Create databases
+  shell: bundle exec rake db:create
+  args:
+    chdir: /mapserver/website/www
+
+- name: Load btree extension
+  postgresql_query:
+    db: openstreetmap
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE EXTENSION btree_gist
+
+- name: Build OSM extension for Postgres
+  make:
+    chdir: /mapserver/website/www/db/functions
+
+- name: Create maptile_for_point function
+  postgresql_query:
+    db: openstreetmap
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE FUNCTION maptile_for_point(int8, int8, int4) RETURNS int4 AS '/mapserver/website/www/db/functions/libpgosm', 'maptile_for_point' LANGUAGE C STRICT
+
+- name: Create tile_for_point function
+  postgresql_query:
+    db: openstreetmap
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE FUNCTION tile_for_point(int4, int4) RETURNS int8 AS '/mapserver/website/www/db/functions/libpgosm', 'tile_for_point' LANGUAGE C STRICT
+
+- name: Create xid_to_int4 function
+  postgresql_query:
+    db: openstreetmap
+    login_user: "{{ postgres_user }}"
+    login_password: "{{ postgres_password }}"
+    query: CREATE FUNCTION xid_to_int4(xid) RETURNS int4 AS '/mapserver/website/www/db/functions/libpgosm', 'xid_to_int4' LANGUAGE C STRICT
+
+- name: Create database structure
+  shell: bundle exec rake db:migrate
+  args:
+    chdir: /mapserver/website/www

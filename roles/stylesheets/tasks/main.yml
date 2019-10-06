@@ -1,0 +1,62 @@
+---
+- name: Install dependencies
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - fonts-hanazono
+      - fonts-noto-cjk
+      - fonts-noto-hinted
+      - fonts-noto-unhinted
+      - nodejs
+      - npm
+      - python-pip
+      - python-yaml
+      - ttf-unifont
+
+- name: Install node dependencies
+  npm:
+    name: carto
+    global: yes
+
+- name: Download Noto color font
+  get_url:
+    url: https://github.com/googlei18n/noto-emoji/raw/master/fonts/NotoColorEmoji.ttf
+    dest: /usr/share/fonts/truetype/noto/NotoColorEmoji.ttf
+
+- name: Download Noto Emoji Regular font
+  get_url:
+    url: https://github.co/googlei18n/noto-emoji/raw/master/fonts/NotoEmoji-Regular.ttf
+    dest: /usr/share/fonts/truetype/noto/NotoEmoji-Regular.ttf
+
+- name: Download Noto Sans Symbols font
+  get_url:
+    url: https://github.com/googlei18n/noto-fonts/raw/master/hinted/NotoSansSymbols-Bold.ttf
+    dest: /usr/share/fonts/truetype/noto/NotoSansSymbols-Bold.ttf
+
+- name: Download Noto Sans Symbols 2 font
+  get_url:
+    url: https://github.com/googlei18n/noto-fonts/raw/master/unhinted/NotoSansSymbols2-Regular.ttf
+    dest: /usr/share/fonts/truetype/noto/NotoSansSymbols2-Regular.ttf
+
+- name: Update font cache
+  shell: fc-cache -fv
+
+- name: Clone stylesheet
+  git:
+    repo: "https://github.com/gravitystorm/openstreetmap-carto.git"
+    dest: /mapserver/styles/standard
+    depth: 1
+    force: yes
+    recursive: yes
+
+- name: Run shapefiles script
+  shell: scripts/get-shapefiles.py
+  args:
+    chdir: /mapserver/styles/standard
+
+- name: Build styles
+  shell: carto -a "3.0.0" project.mml > style.xml
+  args:
+    chdir: /mapserver/styles/standard
+    creates: /mapserver/styles/standard/style.xml

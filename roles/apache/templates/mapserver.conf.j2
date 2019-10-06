@@ -1,0 +1,16 @@
+<VirtualHost *:80>
+    LoadTileConfigFile /usr/local/etc/renderd.conf
+    ModTileRenderdSocketName /var/run/renderd/renderd.sock
+    ModTileRequestTimeout 3
+    ModTileMissingRequestTimeout 60
+
+    ServerName localhost
+    DocumentRoot /mapserver/website/www/public
+    PassengerRuby /usr/bin/ruby
+
+    <Directory /mapserver/website/www/public>
+        Allow from all
+        Options -MultiViews
+        Require all granted
+    </Directory>
+</VirtualHost>

@@ -1,0 +1,43 @@
+---
+- name: apply common configuration
+  hosts: all
+  remote_user: root
+
+  roles:
+    - common
+
+- name: deploy OSM server
+  hosts: osm
+  tags:
+    - osm
+  remote_user: root
+
+  roles:
+    - osm
+
+- name: deploy tileserver
+  hosts: osm
+  tags:
+    - tileserver
+  remote_user: root
+
+  roles:
+    - tileserver
+
+- name: create stylesheet
+  hosts: osm
+  tags:
+    - stylesheets
+  remote_user: root
+
+  roles:
+    - stylesheets
+
+- name: set up apache
+  hosts: osm
+  tags:
+    - apache
+  remote_user: root
+
+  roles:
+    - apache
