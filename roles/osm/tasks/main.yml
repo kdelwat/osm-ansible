@@ -50,6 +50,10 @@
 - name: Change server URL for OSM website
   shell: "sed -i /mapserver/website/www/config/settings.local.yml -e 's/openstreetmap.example.com/{{ server_url }}/'"
 
+# https://www.pluralsight.com/blog/it-ops/linux-file-permissions
+- name: Add read-write permissions to tmp folder (fixes bug in OSM application)
+  shell: chmod ugo+rwx /mapserver/website/www/tmp
+
 - name: Create PostgreSQL user
   postgresql_user:
     name: "{{ postgres_user }}"
