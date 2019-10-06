@@ -85,6 +85,10 @@ rm -rf /mapserver/website/tiles/standard/*
 
 (commands from [here](https://wiki.openstreetmap.org/wiki/User:Ika-chan!/Fantasy_maps_with_OSM_software#References))
 
+### Improving performance
+
+You can decrease tile rendering time by making some tweaks to PostgresSQL. See [here](https://ircama.github.io/osm-carto-tutorials/tile-server-ubuntu/).
+
 # Thanks
 
 Thanks to user Ika-chan! from the OpenGeoFiction community, who documented most of the setup and usage process [here](https://wiki.openstreetmap.org/wiki/User:Ika-chan!/Fantasy_maps_with_OSM_software#References). This playbook really just automates their hard work and brings it up to date with changes since the tutorial was written.
