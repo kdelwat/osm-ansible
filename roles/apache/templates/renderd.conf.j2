@@ -19,7 +19,8 @@ stats_file=/var/run/renderd/renderd.stats
 ;stats_file=/var/run/renderd/renderd.stats
 
 [mapnik]
-plugins_dir=/usr/lib/mapnik/3.0/input
+;Fix for segfault from https://help.openstreetmap.org/questions/60822/7931-segmentation-fault-renderd-is-using-mapnik-version-310
+plugins_dir=/usr/local/lib/mapnik/input
 font_dir=/usr/share/fonts/truetype
 font_dir_recurse=1
 
